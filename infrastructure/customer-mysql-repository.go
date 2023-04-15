@@ -2,10 +2,10 @@ package infrastructure
 
 import (
 	"database/sql"
-	"log"
 	"time"
 
 	"github.com/evandrobarbosadosreis/go-rest-development/domain"
+	"github.com/evandrobarbosadosreis/go-rest-development/logger"
 	_ "github.com/go-sql-driver/mysql"
 )
 
@@ -19,7 +19,7 @@ func (repository *customerMySqlRepository) FindAll(status domain.Status) ([]doma
 	rows, err := repository.Filter(status)
 
 	if err != nil {
-		log.Println("Error getting customers: " + err.Error())
+		logger.Error("Error getting customers: " + err.Error())
 		return result, domain.NewUnexpectedError("unexpected database error")
 	}
 
@@ -27,7 +27,7 @@ func (repository *customerMySqlRepository) FindAll(status domain.Status) ([]doma
 		var customer domain.Customer
 		err = rows.Scan(&customer.Id, &customer.Name, &customer.City, &customer.Zip, &customer.Birth, &customer.Status)
 		if err != nil {
-			log.Println("Error reading rows: " + err.Error())
+			logger.Error("Error reading rows: " + err.Error())
 			return result, domain.NewUnexpectedError("unexpected database error")
 		}
 		result = append(result, customer)
@@ -57,7 +57,7 @@ func (repository *customerMySqlRepository) FindById(id string) (*domain.Customer
 		if err == sql.ErrNoRows {
 			return nil, domain.NewNotFoundError("customer not found")
 		}
-		log.Println("Error reading row: " + err.Error())
+		logger.Error("Error reading row: " + err.Error())
 		return nil, domain.NewUnexpectedError("unexpected database error")
 	}
 
