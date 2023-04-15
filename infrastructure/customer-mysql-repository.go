@@ -7,66 +7,55 @@ import (
 	"github.com/evandrobarbosadosreis/go-rest-development/domain"
 	"github.com/evandrobarbosadosreis/go-rest-development/logger"
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/jmoiron/sqlx"
 )
 
 type customerMySqlRepository struct {
-	client *sql.DB
+	client *sqlx.DB
 }
 
 func (repository *customerMySqlRepository) FindAll(status domain.Status) ([]domain.Customer, *domain.AppError) {
+
+	var err error
+
 	result := make([]domain.Customer, 0)
 
-	rows, err := repository.Filter(status)
+	if status.IsValid() {
+		err = repository.client.Select(&result, "select customer_id, name, city, zipcode, date_of_birth, status from customers where status = ?", status.GetValue())
+	} else {
+		err = repository.client.Select(&result, "select customer_id, name, city, zipcode, date_of_birth, status from customers")
+	}
 
 	if err != nil {
 		logger.Error("Error getting customers: " + err.Error())
-		return result, domain.NewUnexpectedError("unexpected database error")
-	}
-
-	for rows.Next() {
-		var customer domain.Customer
-		err = rows.Scan(&customer.Id, &customer.Name, &customer.City, &customer.Zip, &customer.Birth, &customer.Status)
-		if err != nil {
-			logger.Error("Error reading rows: " + err.Error())
-			return result, domain.NewUnexpectedError("unexpected database error")
-		}
-		result = append(result, customer)
+		return nil, domain.NewUnexpectedError("unexpected database error")
 	}
 
 	return result, nil
 }
 
-func (repository *customerMySqlRepository) Filter(filter domain.Status) (*sql.Rows, error) {
-
-	query := "select customer_id, name, city, zipcode, date_of_birth, status from customers"
-
-	if filter.IsValid() {
-		query += " where status = ?"
-		return repository.client.Query(query, filter.GetValue())
-	}
-	return repository.client.Query(query)
-}
-
 func (repository *customerMySqlRepository) FindById(id string) (*domain.Customer, *domain.AppError) {
-	query := "select customer_id, name, city, zipcode, date_of_birth, status from customers where customer_id = ?"
-	row := repository.client.QueryRow(query, id)
-	var customer domain.Customer
-	err := row.Scan(&customer.Id, &customer.Name, &customer.City, &customer.Zip, &customer.Birth, &customer.Status)
 
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, domain.NewNotFoundError("customer not found")
-		}
-		logger.Error("Error reading row: " + err.Error())
-		return nil, domain.NewUnexpectedError("unexpected database error")
+	var result domain.Customer
+
+	err := repository.client.Get(&result, "select customer_id, name, city, zipcode, date_of_birth, status from customers where customer_id = ?", id)
+
+	if err == nil {
+		return &result, nil
 	}
 
-	return &customer, nil
+	if err == sql.ErrNoRows {
+		return nil, domain.NewNotFoundError("customer not found")
+	}
+
+	logger.Error("Error reading row: " + err.Error())
+
+	return nil, domain.NewUnexpectedError("unexpected database error")
 }
 
 func NewMySqlRepository() domain.CustomerRepository {
 
-	db, err := sql.Open("mysql", "root:mysql@tcp(localhost)/banking")
+	db, err := sqlx.Open("mysql", "root:mysql@tcp(localhost)/banking")
 
 	if err != nil {
 		panic(err)

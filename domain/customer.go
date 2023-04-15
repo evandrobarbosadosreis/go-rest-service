@@ -1,10 +1,10 @@
 package domain
 
 type Customer struct {
-	Id     string
-	Name   string
-	City   string
-	Birth  string
-	Zip    string
-	Status string
+	Id      string `db:"customer_id"`
+	Name    string
+	City    string
+	Birth   string `db:"date_of_birth"`
+	Zipcode string
+	Status  string
 }

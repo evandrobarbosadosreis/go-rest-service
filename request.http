@@ -1,12 +1,11 @@
 
 GET http://localhost:8000/customers
 ###
-
 GET http://localhost:8000/customers?status=active
 ###
-
 GET http://localhost:8000/customers?status=inactive
 ###
-
 GET http://localhost:8000/customers/2000
+###
+GET http://localhost:8000/customers/9999
 ###
