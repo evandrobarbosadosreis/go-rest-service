@@ -20,3 +20,11 @@ func (s Status) GetValue() string {
 func (s Status) IsValid() bool {
 	return string(s) == active || string(s) == inactive
 }
+
+func (s Status) String() string {
+	if s.GetValue() == "1" {
+		return active
+	} else {
+		return inactive
+	}
+}
